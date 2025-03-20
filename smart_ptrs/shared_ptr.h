@@ -1,55 +1,68 @@
 #pragma once
-
 template <typename T>
 class shared_ptr
 {
-#pragma once
+	T* _ptr;
 
-		T* _ptr;
+public:
+	unique_ptr() { _ptr = nullptr; }
 
-	public:
-		shared_ptr() { _ptr = nullptr; }
+	unique_ptr(T&& obj) : _ptr(new T(obj)) {}
 
-		shared_ptr(T& obj) : _ptr(new T(obj)) {}
+	unique_ptr(unique_ptr&& other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
 
-		shared_ptr(T&& obj) : _ptr(new T(obj)) {}
+	unique_ptr& operator=(unique_ptr&& other) noexcept
+	{
+		if (this == &other) return *this;
 
-		shared_ptr(const shared_ptr& other) : _ptr(other._ptr) {}
+		reset();
+		_ptr = other._ptr;
+		other._ptr = nullptr;
 
-		shared_ptr(shared_ptr&& other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
+		return *this;
+	}
 
-		shared_ptr& operator=(shared_ptr&& other) noexcept
-		{
-			if (this == &other) return *this;
+	T* operator->()
+	{
+		return _ptr;
+	}
 
-			_ptr = other._ptr;
-			other._ptr = nullptr;
+	T& operator*()
+	{
+		return *_ptr;
+	}
 
-			return *this;
-		}
+	explicit operator bool() const { return _ptr != nullptr; }
 
-		shared_ptr& operator=(const shared_ptr& other)
-		{
-			if (this == &other) return *this;
+	T* get() const { return _ptr; }
 
-			_ptr = other._ptr;
+	unique_ptr& swap(unique_ptr& other)
+	{
+		T* temp = _ptr;
+		_ptr = other._ptr;
+		other._ptr = temp;
 
-			return *this;
-		}
+		return *this;
 
-		T* operator->()
-		{
-			return _ptr;
-		}
+	}
 
-		T& operator*()
-		{
-			return *_ptr;
-		}
+	inline void reset(T* ptr = nullptr)
+	{
+		if (!_ptr) return;
 
-		T* get() const { return _ptr; }
+		delete _ptr;
+		_ptr = ptr;
+	}
 
-		~shared_ptr() { if (_ptr) delete _ptr; }
+	inline T* release()
+	{
+		if (!_ptr) return nullptr;
 
+		T* temp = _ptr;
+		_ptr = nullptr;
+		return temp;
+	}
+
+	~unique_ptr() { if (_ptr) delete _ptr; }
 };
 
