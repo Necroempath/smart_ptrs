@@ -5,7 +5,7 @@ class unique_ptr
 	T* _ptr;
 
 public:
-	unique_ptr() { _ptr = nullptr; }
+	unique_ptr() : _ptr(nullptr) {}
 
 	unique_ptr(T&& obj) : _ptr(new T(obj)) {}
 
