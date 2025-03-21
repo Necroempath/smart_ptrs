@@ -5,6 +5,16 @@ class shared_ptr
 	T* _ptr;
 	size_t* _use_count;
 	
+	bool decrease_count()
+	{
+		if(_use_count != nullptr)
+		{
+			if (*_use_count >= 0) return --(*_use_count) == 0;			
+		}
+
+		return 0;
+	}
+
 public:
 	shared_ptr() : _ptr(nullptr), _use_count(new size_t(0)) {}
 
@@ -21,7 +31,11 @@ public:
 	shared_ptr& operator=(const shared_ptr& other)
 	{
 		if (this == &other) return *this;
-		if (*_use_count >= 0) (*_use_count)--;
+		if (decrease_count()) {
+			delete _ptr;
+			delete _use_count;
+		}
+
 		_ptr = other._ptr;
 		_use_count = other._use_count;
 		(*_use_count)++;
@@ -32,7 +46,10 @@ public:
 	shared_ptr& operator=(shared_ptr&& other) noexcept
 	{
 		if (this == &other) return *this;
-		if (*_use_count >= 0) (*_use_count)--;
+		if (decrease_count()) {
+			delete _ptr;
+			delete _use_count;
+		}
 
 		_ptr = other._ptr;
 		_use_count = other._use_count;
@@ -76,12 +93,17 @@ public:
 	inline T* release()
 	{
 		if (!_ptr) return nullptr;
-		
+		if (decrease_count()) {
+			delete _ptr; 
+			delete _use_count;
+		}
+
 		T* temp = _ptr;
 		_ptr = nullptr;
+
 		return temp;
 	}
-
+	
 	~shared_ptr() 
 	{ 
 		if (!_use_count) return;
