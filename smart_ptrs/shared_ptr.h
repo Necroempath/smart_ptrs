@@ -3,23 +3,28 @@ template <typename T>
 class shared_ptr
 {
 	T* _ptr;
-	shared_ptr* array;
-	size_t _use_count;
-
+	size_t* _use_count;
+	
 public:
-	shared_ptr() : _ptr(nullptr), _use_count(0) {}
+	shared_ptr() : _ptr(nullptr), _use_count(new size_t(0)) {}
 
-	shared_ptr(T&& obj) : _ptr(new T(obj)), _use_count(1) {}
+	shared_ptr(T&& obj) : _ptr(new T(obj)), _use_count(new size_t(1)) {}
 
-	shared_ptr(const shared_ptr& other) : _ptr(other._ptr), _use_count(other._use_count + 1) {}
+	shared_ptr(const shared_ptr& other) : _ptr(other._ptr), _use_count(other._use_count) { (*_use_count)++; }
 
-	shared_ptr(shared_ptr&& other) noexcept : _ptr(other._ptr), _use_count(other._use_count) { other._ptr = nullptr; }
+	shared_ptr(shared_ptr&& other) noexcept : _ptr(other._ptr), _use_count(other._use_count)
+	{ 
+		other._ptr = nullptr; 
+		other._use_count = nullptr;
+	}
 
 	shared_ptr& operator=(const shared_ptr& other)
 	{
 		if (this == &other) return *this;
+		if (*_use_count >= 0) (*_use_count)--;
 		_ptr = other._ptr;
-		_use_count = other._use_count + 1;
+		_use_count = other._use_count;
+		(*_use_count)++;
 
 		return *this;
 	}
@@ -27,22 +32,22 @@ public:
 	shared_ptr& operator=(shared_ptr&& other) noexcept
 	{
 		if (this == &other) return *this;
+		if (*_use_count >= 0) (*_use_count)--;
 
-		reset();
 		_ptr = other._ptr;
 		_use_count = other._use_count;
+
 		other._ptr = nullptr;
+		other._use_count = nullptr;
 
 		return *this;
 	}
 
-	const T* operator[](const long index)
-
 	T* operator->()
 	{
-		return _ptr;
+		return get();
 	}
-
+	
 	T& operator*()
 	{
 		return *_ptr;
@@ -50,37 +55,39 @@ public:
 
 	explicit operator bool() const { return _ptr != nullptr; }
 
-	T* get() const { return _ptr; }
+	inline T* get() const { if(_ptr) return _ptr; }
 
-	size_t use_count() const { return _use_count; }
+	inline size_t use_count() const { if(_use_count) return *_use_count; }
 
-	shared_ptr& swap(shared_ptr& other)
+	void swap(shared_ptr& other)
 	{
-		T* temp = _ptr;
+		T* temp_ptr = _ptr;
+		size_t* temp_count = _use_count;
+
 		_ptr = other._ptr;
-		other._ptr = temp;
+		_use_count = other._use_count;
 
-		return *this;
-
+		other._ptr = temp_ptr;
+		other._use_count = temp_count;
 	}
 
-	inline void reset(T* ptr = nullptr)
-	{
-		if (!_ptr) return;
-
-		delete _ptr;
-		_ptr = ptr;
-	}
+	inline bool unique() const { return use_count() == 1; }
 
 	inline T* release()
 	{
 		if (!_ptr) return nullptr;
-
+		
 		T* temp = _ptr;
 		_ptr = nullptr;
 		return temp;
 	}
 
-	~shared_ptr() { if (_ptr && _use_count == 0) delete _ptr; }
+	~shared_ptr() 
+	{ 
+		if (!_use_count) return;
+		if (*_use_count >= 0) (*_use_count)--;
+		if (_ptr && *_use_count == 0) 
+			delete _ptr; 
+	}
 };
 

@@ -24,7 +24,7 @@ public:
 
 	T* operator->()
 	{
-		return _ptr;
+		if (_ptr) return _ptr;
 	}
 
 	T& operator*()
@@ -34,16 +34,13 @@ public:
 
 	explicit operator bool() const { return _ptr != nullptr; }
 
-	T* get() const { return _ptr; }
+	inline T* get() const { if(_ptr) return _ptr; }
 
-	unique_ptr& swap(unique_ptr& other)
+	void swap(unique_ptr& other)
 	{
 		T* temp = _ptr;
 		_ptr = other._ptr;
 		other._ptr = temp;
-
-		return *this;
-
 	}
 
 	inline void reset(T* ptr = nullptr)
