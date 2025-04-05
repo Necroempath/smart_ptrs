@@ -7,8 +7,10 @@ class unique_ptr
 public:
 	unique_ptr() : _ptr(nullptr) {}
 
-	unique_ptr(T&& obj) : _ptr(new T(obj)) {}
+	unique_ptr(const T& obj) = delete;
 
+	unique_ptr(T&& obj) : _ptr(new T(obj)) {}
+	
 	unique_ptr(unique_ptr&& other) noexcept : _ptr(other._ptr) { other._ptr = nullptr; }
 
 	unique_ptr& operator=(unique_ptr&& other) noexcept
